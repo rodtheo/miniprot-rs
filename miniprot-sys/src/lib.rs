@@ -55,8 +55,18 @@ mod tests {
             mp_mapopt_check(mo.as_ptr()); // Miniprot check map options
 
             let reference = std::ffi::CString::new("miniprot/test/DPP3-hs.gen.fa.gz").unwrap();
+            let query = std::ffi::CString::new("miniprot/test/DPP3-mm.pep.fa.gz").unwrap();
 
-            let mut mi = mp_idx_load(reference.as_ptr() as *const i8, io.as_ptr(), 4); // Miniprot initialize index
+            let mut mi: *mut mp_idx_t = mp_idx_load(reference.as_ptr() as *const i8, io.as_ptr(), 1); // Miniprot initialize index
+
+            let mut mo = mo.assume_init();
+
+            mp_idx_print_stat(mi as *const mp_idx_t, mo.max_occ);
+
+            println!("\n\nMapping results\n\n");
+            mp_map_file(mi as *const mp_idx_t, query.as_ptr() as *const i8, &mo, 1 as i32);
+
+            mp_idx_destroy(mi);
         }
     }
 }
