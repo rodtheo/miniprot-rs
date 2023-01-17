@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["Joseph Guhlin <joseph.guhlin@gmail.com>"]
 license = "MIT OR Apache-2.0"
 description = "Bindings to libminiprot"
+links = "libminiprot"
 repository = "https://github.com/jguhlin/miniprot-rs"
 categories = ["science", "external-ffi-bindings"]
 keywords = ["bioinformatics", "fasta", "alignment", "ffi", "protein"]
@@ -18,11 +19,11 @@ exclude = [
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+libz-sys = { version = "1.1.8", default-features = false, features = ["libc"] }
 
 [build-dependencies]
-pkg-config = "0.3.25"
+pkg-config = "0.3.26"
 libc = "0.2"
-libz-sys = { version = "1.1.3" }
 
 [build-dependencies.bindgen]
 optional = true
@@ -31,7 +32,7 @@ default-features = false
 features = ["runtime", "which-rustfmt"]
 
 [build-dependencies.cc]
-version = "1.0.45"
+version = "1.0.78"
 
 [features]
 default = []

@@ -1,4 +1,4 @@
-use pkg_config;
+// use pkg_config;
 use std::env;
 use std::path::PathBuf;
 
@@ -9,21 +9,23 @@ fn compile() {
     let _target = env::var("TARGET").unwrap();
 
     println!("cargo:rerun-if-changed=miniprot/*.c");
+    println!("cargo:rerun-if-changed=miniprot/*.h");
     println!("cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR");
-    // println!("cargo:rustc-link-lib=m");
     println!("cargo:rustc-link-lib=pthread");
+    println!("cargo:rustc-link-lib=z");
 
     let mut cc = cc::Build::new();
     cc.warnings(false);
     cc.out_dir(&out_path);
     cc.cpp_link_stdlib(None);
     cc.flag("-lpthread");
+    cc.flag("-lz");
     cc.flag("-std=c99");
-    cc.flag("-g");
-    cc.static_flag(true);
+    // cc.static_flag(true);
     cc.opt_level(3);
 
     if let Some(include) = std::env::var_os("DEP_Z_INCLUDE") {
+        println!("DEBUG: {:#?}", include);
         cc.include(include);
     }
 

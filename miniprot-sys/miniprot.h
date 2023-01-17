@@ -1,4 +1,4 @@
-#include <zlib.h>
+#include "zlib.h"
 #include "miniprot/nasw.h"
 #include "miniprot/kalloc.h"
 #include "miniprot/ketopt.h"
