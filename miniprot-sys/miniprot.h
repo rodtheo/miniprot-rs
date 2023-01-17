@@ -1,0 +1,10 @@
+#include <zlib.h>
+#include "miniprot/nasw.h"
+#include "miniprot/kalloc.h"
+#include "miniprot/ketopt.h"
+#include "miniprot/kseq.h"
+#include "miniprot/ksort.h"
+#include "miniprot/kthread.h"
+#include "miniprot/kvec-km.h"
+#include "miniprot/miniprot.h"
+#include "miniprot/mppriv.h"
