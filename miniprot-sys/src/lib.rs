@@ -44,7 +44,6 @@ mod tests {
     #[test]
     fn test_miniprot() {
         unsafe {
-
             let mut mo = MaybeUninit::uninit();
             let mut io = MaybeUninit::uninit();
             // let mut mi: MaybeUninit<*mut mp_idx_t> = MaybeUninit::uninit();
