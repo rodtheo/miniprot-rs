@@ -25,4 +25,4 @@ You should cite the minimap2 papers if you use this in your work.
 * Possible to decouple from pthreads?
 
 # Funding
-![Genomics Aotearoa](info/genomics-aotearoa.png)
+![Genomics Aotearoa](../info/genomics-aotearoa.png)
