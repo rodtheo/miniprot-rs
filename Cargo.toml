@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 miniprot-sys = { path = "./miniprot-sys" }
 lazy_static = "1.4.0"
+fffx = "0.1.2"
