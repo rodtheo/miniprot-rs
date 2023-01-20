@@ -64,7 +64,7 @@ pub struct Aligner {
 
 impl Default for Aligner {
     fn default() -> Self {
-        let mut aligner = Aligner {
+        let aligner = Aligner {
             threads: 1,
             map_options: mp_mapopt_t::default(),
             index_options: mp_idxopt_t::default(),
@@ -174,13 +174,148 @@ impl Aligner {
             // NO! Can't deref here in case n_regs == 0
             // let result: mp_reg1_t = unsafe { mp_reg.assume_init() };
 
-            // TODO:
-            // Return Vec<Mappings>
+            let mut mappings = Vec::with_capacity(n_regs as usize);
 
-            //result
+            // Need to format properly, see:
+            // 	ctg = &mi->nt->ctg[r->vid>>1];
+            // in format.c for a start (getting the contig name)
+
+            for i in 0..n_regs {
+                unsafe {
+                    let reg_ptr = (*mp_reg.as_ptr()).offset(i as isize);
+                    let const_ptr = reg_ptr as *const mp_reg1_t;
+                    let reg: mp_reg1_t = *reg_ptr;
+
+                    let contig: *mut ::std::os::raw::c_char =
+                        (*(self.index.unwrap()).seq.offset(reg.rid as isize)).name;
+
+                    let is_primary = reg.parent == reg.id;
+                    let alignment = if !reg.p.is_null() {
+                        let p = &*reg.p;
+
+                        // calculate the edit distance
+                        let nm = reg.blen - reg.mlen + p.n_ambi() as i32;
+                        let n_cigar = p.n_cigar;
+                        // Create a vector of the cigar blocks
+                        let (cigar, cigar_str) = if n_cigar > 0 {
+                            let cigar = p
+                                .cigar
+                                .as_slice(n_cigar as usize)
+                                .to_vec()
+                                .iter()
+                                .map(|c| ((c >> 4) as u32, (c & 0xf) as u8)) // unpack the length and op code
+                                .collect::<Vec<(u32, u8)>>();
+                            let cigar_str = cigar
+                                .iter()
+                                .map(|(len, code)| {
+                                    let cigar_char = match code {
+                                        0 => "M",
+                                        1 => "I",
+                                        2 => "D",
+                                        3 => "N",
+                                        4 => "S",
+                                        5 => "H",
+                                        6 => "P",
+                                        7 => "=",
+                                        8 => "X",
+                                        _ => panic!("Invalid CIGAR code {code}"),
+                                    };
+                                    format!("{len}{cigar_char}")
+                                })
+                                .collect::<Vec<String>>()
+                                .join("");
+                            (Some(cigar), Some(cigar_str))
+                        } else {
+                            (None, None)
+                        };
+
+                        let (cs_str, md_str) = if cs || md {
+                            let mut cs_string: *mut libc::c_char = std::ptr::null_mut();
+                            let mut m_cs_string: libc::c_int = 0i32;
+
+                            let cs_str = if cs {
+                                let _cs_len = mm_gen_cs(
+                                    km,
+                                    &mut cs_string,
+                                    &mut m_cs_string,
+                                    &self.idx.unwrap() as *const mm_idx_t,
+                                    const_ptr,
+                                    seq.as_ptr() as *const i8,
+                                    true.into(),
+                                );
+                                let _cs_string = std::ffi::CStr::from_ptr(cs_string)
+                                    .to_str()
+                                    .unwrap()
+                                    .to_string();
+                                Some(_cs_string)
+                            } else {
+                                None
+                            };
+
+                            let md_str = if md {
+                                let _md_len = mm_gen_MD(
+                                    km,
+                                    &mut cs_string,
+                                    &mut m_cs_string,
+                                    &self.idx.unwrap() as *const mm_idx_t,
+                                    const_ptr,
+                                    seq.as_ptr() as *const i8,
+                                );
+                                let _md_string = std::ffi::CStr::from_ptr(cs_string)
+                                    .to_str()
+                                    .unwrap()
+                                    .to_string();
+                                Some(_md_string)
+                            } else {
+                                None
+                            };
+                            (cs_str, md_str)
+                        } else {
+                            (None, None)
+                        };
+
+                        Some(Alignment {
+                            nm,
+                            cigar,
+                            cigar_str,
+                            md: md_str,
+                            cs: cs_str,
+                        })
+                    } else {
+                        None
+                    };
+                    mappings.push(Mapping {
+                        target_name: Some(
+                            std::ffi::CStr::from_ptr(contig)
+                                .to_str()
+                                .unwrap()
+                                .to_string(),
+                        ),
+                        target_len: (*(self.idx.unwrap()).seq.offset(reg.rid as isize)).len as i32,
+                        target_start: reg.rs,
+                        target_end: reg.re,
+                        query_name: None,
+                        query_len: NonZeroI32::new(seq.len() as i32),
+                        query_start: reg.qs,
+                        query_end: reg.qe,
+                        strand: if reg.rev() == 0 {
+                            Strand::Forward
+                        } else {
+                            Strand::Reverse
+                        },
+                        match_len: reg.mlen,
+                        block_len: reg.blen,
+                        mapq: reg.mapq(),
+                        is_primary,
+                        alignment,
+                    });
+                }
+            }
+
+            mappings
         });
 
-        println!("Mappings: {}", n_regs);
+        Ok(mappings)
 
         // println!("Mappings: {}", mappings);
     }
