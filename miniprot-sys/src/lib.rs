@@ -25,6 +25,23 @@ impl Default for mp_mapopt_t {
     }
 }
 
+impl mp_mapopt_t {
+    pub fn no_splice() -> Self {
+        unsafe {
+            let mut opt = MaybeUninit::uninit();
+            mp_mapopt_init(opt.as_mut_ptr());
+            let mut opt = opt.assume_init();
+            opt.flag = opt.flag | 0x1;
+            opt.max_ext = 1000;
+            opt.bw = 1000;
+            opt.max_intron = 1000;
+            opt.io = 10000;
+            opt.io_end = 10000;
+            opt
+        }
+    }
+}
+
 impl Default for mp_idxopt_t {
     fn default() -> Self {
         unsafe {
@@ -56,14 +73,20 @@ mod tests {
             let reference = std::ffi::CString::new("miniprot/test/DPP3-hs.gen.fa.gz").unwrap();
             let query = std::ffi::CString::new("miniprot/test/DPP3-mm.pep.fa.gz").unwrap();
 
-            let mut mi: *mut mp_idx_t = mp_idx_load(reference.as_ptr() as *const i8, io.as_ptr(), 1); // Miniprot initialize index
+            let mut mi: *mut mp_idx_t =
+                mp_idx_load(reference.as_ptr() as *const i8, io.as_ptr(), 1); // Miniprot initialize index
 
             let mut mo = mo.assume_init();
 
             mp_idx_print_stat(mi as *const mp_idx_t, mo.max_occ);
 
             println!("\n\nMapping results\n\n");
-            mp_map_file(mi as *const mp_idx_t, query.as_ptr() as *const i8, &mo, 1 as i32);
+            mp_map_file(
+                mi as *const mp_idx_t,
+                query.as_ptr() as *const i8,
+                &mo,
+                1 as i32,
+            );
 
             mp_idx_destroy(mi);
         }

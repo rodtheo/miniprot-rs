@@ -11,6 +11,7 @@ miniprot-sys = "0.1.0"
 ```
 
 Tested with rustc 1.64.0 and nightly.
+ 
 
 # Citation
 You should cite the minimap2 papers if you use this in your work.
